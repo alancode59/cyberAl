@@ -1,0 +1,32 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: cyberal
+      MYSQL_USER: cyberal
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-cyberal}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootcyberal}
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootcyberal}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-cambia-esta-clave}
+      DATABASE_URL: mysql+pymysql://cyberal:${MYSQL_PASSWORD:-cyberal}@db:3306/cyberal?charset=utf8mb4
+    ports:
+      - "5000:5000"
+
+volumes:
+  db_data:

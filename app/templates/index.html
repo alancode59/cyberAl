@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 fill=%22%23030605%22/><text x=%224%22 y=%2224%22 font-family=%22monospace%22 font-size=%2222%22 fill=%22%2339ff7a%22>&gt;_</text></svg>">
+  <title>CYBERAL — nullsector</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Chakra+Petch:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "{{ url_for('static', filename='vendor/three/build/three.module.js') }}",
+        "three/addons/": "{{ url_for('static', filename='vendor/three/examples/jsm/') }}"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="gl"></canvas>
+  <div id="grain"></div>
+
+  <!-- CARGA -->
+  <section id="loading" class="screen show">
+    <div class="loader-box">
+      <div class="glitch" data-text="CYBERAL">CYBERAL</div>
+      <div class="loader-bar"><span id="loadBar"></span></div>
+      <div id="loadText" class="mono dim">compilando shaders…</div>
+    </div>
+  </section>
+
+  <!-- LOGIN -->
+  <section id="login" class="screen">
+    <div class="panel narrow">
+      <pre id="bootLog" class="boot mono"></pre>
+      <h1 class="glitch big" data-text="CYBERAL">CYBERAL</h1>
+      <p class="tag">aprende a pensar como atacante. defiende como profesional.</p>
+      <form id="loginForm" autocomplete="off">
+        <label>alias<input id="alias" maxlength="24" required placeholder="ghost"></label>
+        <label>pin<input id="pin" type="password" autocomplete="current-password" inputmode="numeric" maxlength="8" required placeholder="••••"></label>
+        <div class="row">
+          <button type="submit" data-action="login">entrar</button>
+          <button type="button" id="registerBtn" class="ghost">crear identidad</button>
+        </div>
+        <p id="loginError" class="error"></p>
+      </form>
+      <p class="fine">Todo ocurre en laboratorios simulados. Usa estas técnicas sólo con autorización por escrito.</p>
+    </div>
+  </section>
+
+  <!-- ROLES -->
+  <section id="roles" class="screen">
+    <div class="roles-wrap">
+      <header class="roles-head">
+        <div>
+          <span class="mono dim">nullsector://operadores/</span><span id="whoAlias" class="mono accent"></span>
+          <h2>elige tu rol</h2>
+        </div>
+        <div class="head-right">
+          <span class="mono">XP <b id="whoXp">0</b></span>
+          <button id="logoutBtn" class="ghost small">salir</button>
+        </div>
+      </header>
+      <div id="resumeBox" class="resume hidden">
+        <span>Tienes una misión activa: <b id="resumeName"></b></span>
+        <button id="resumeBtn" class="small">continuar</button>
+      </div>
+      <div id="roleCards" class="cards"></div>
+      <div class="leader">
+        <h3>ranking</h3>
+        <ol id="leaders"></ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- NIVELES -->
+  <section id="levels" class="screen">
+    <div class="roles-wrap">
+      <header class="roles-head">
+        <div>
+          <button id="backRoles" class="ghost small">‹ roles</button>
+          <h2 id="levelsRoleName">niveles</h2>
+          <span id="levelsTagline" class="mono dim"></span>
+        </div>
+        <div class="head-right">
+          <span class="mono">progreso <b id="levelsProgress">0/6</b></span>
+        </div>
+      </header>
+      <p class="levels-intro mono dim">de lo mas facil a lo mas dificil — completa a tu ritmo, en el orden que quieras.</p>
+      <div id="levelList" class="levels"></div>
+    </div>
+  </section>
+
+  <!-- BRIEFING -->
+  <section id="briefing" class="screen">
+    <div class="panel wide">
+      <span class="mono dim" id="briefRole"></span>
+      <h2 id="briefTitle"></h2>
+      <pre id="briefText" class="mono brief"></pre>
+      <div class="controls-help mono">
+        <div><kbd>clic</kbd> en un monitor para acercarte</div>
+        <div><kbd>escribe</kbd> para usar la terminal</div>
+        <div><kbd>ESC</kbd> alejarte / pausa</div>
+        <div><kbd>help</kbd> <kbd>objetivos</kbd> <kbd>pista</kbd> <kbd>aprende</kbd></div>
+      </div>
+      <button id="beginBtn">iniciar operación</button>
+    </div>
+  </section>
+
+  <!-- HUD -->
+  <section id="hud" class="hidden">
+    <div class="hud-top">
+      <div class="hud-mission">
+        <span id="hudRole" class="mono dim"></span>
+        <b id="hudTitle"></b>
+      </div>
+      <div class="hud-meter">
+        <span id="meterLabel" class="mono"></span>
+        <div class="meter"><span id="meterFill"></span></div>
+        <span id="meterValue" class="mono"></span>
+      </div>
+      <div class="hud-score mono">PTS <b id="hudScore">0</b> · <span id="hudClock">00:00</span></div>
+    </div>
+    <div id="hudObjective" class="hud-obj mono"></div>
+    <div id="timers" class="timers"></div>
+    <div id="toasts" class="toasts"></div>
+    <div id="hudHint" class="hud-hint mono">clic en el monitor central o empieza a escribir · ESC pausa</div>
+  </section>
+
+  <!-- PAUSA -->
+  <section id="pause" class="screen">
+    <div class="panel narrow menu">
+      <h2>pausa</h2>
+      <button id="resumeGame">reanudar</button>
+      <button id="toggleSound" class="ghost">sonido: on</button>
+      <button id="toggleFx" class="ghost">efectos: auto</button>
+      <button id="toRoles" class="ghost">cambiar de rol</button>
+      <button id="abandonBtn" class="danger">abandonar misión</button>
+    </div>
+  </section>
+
+  <!-- FIN -->
+  <section id="end" class="screen">
+    <div class="panel narrow center">
+      <h1 id="endTitle" class="glitch big" data-text=""></h1>
+      <p id="endText"></p>
+      <p class="mono">puntuación <b id="endScore"></b></p>
+      <button id="endBtn">volver a los roles</button>
+    </div>
+  </section>
+
+  <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
